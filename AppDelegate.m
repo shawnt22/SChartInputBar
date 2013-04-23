@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "SChartInputBar.h"
 
 @implementation AppDelegate
 
@@ -22,6 +23,12 @@
     // Override point for customization after application launch.
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
+    
+    SChartInputBar *_input_bar = [SChartInputBar defaultChartInputBar];
+    [self.window addSubview:_input_bar];
+    
+    
+    
     return YES;
 }
 

@@ -12,4 +12,11 @@
 @interface SChartInputBar : UIView <UITextViewDelegate>
 @property (nonatomic, assign) id<SChartInputBarDelegate> delegate;
 @property (nonatomic, readonly) NSString *text;
+
++ (SChartInputBar *)defaultChartInputBar;
+- (void)clearInput;
+@end
+
+@interface SChartInputBar (Util)
++ (BOOL)isEmptyString:(NSString *)string;
 @end
