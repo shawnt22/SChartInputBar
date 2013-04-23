@@ -15,6 +15,7 @@
 
 + (SChartInputBar *)defaultChartInputBar;
 - (void)clearInput;
+- (void)setPlaceHolder:(NSString *)placeHolder;
 @end
 
 @interface SChartInputBar (Util)

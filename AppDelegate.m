@@ -25,6 +25,7 @@
     [self.window makeKeyAndVisible];
     
     SChartInputBar *_input_bar = [SChartInputBar defaultChartInputBar];
+    [_input_bar setPlaceHolder:@"some message here"];
     [self.window addSubview:_input_bar];
     
     

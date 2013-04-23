@@ -11,7 +11,9 @@
 @interface SChartInputBar ()
 @property (nonatomic, assign) UITextView *textView;
 @property (nonatomic, assign) UIButton *doneButton;
+@property (nonatomic, assign) UILabel *placeHolderLabel;
 @property (nonatomic, assign) CGFloat barMaxHeight;
+@property (nonatomic, assign) CGRect currentKeyboardFrame;
 @end
 
 @interface SChartInputBar (OverWrite)
@@ -23,8 +25,8 @@
 
 @implementation SChartInputBar
 @synthesize delegate;
-@synthesize textView, doneButton;
-@synthesize barMaxHeight;
+@synthesize textView, doneButton, placeHolderLabel;
+@synthesize barMaxHeight, currentKeyboardFrame;
 
 #define k_chart_input_bar_margin_top    5.0
 #define k_chart_input_bar_margin_left   3.0
@@ -55,7 +57,7 @@
         [_bg release];
         
         UIButton *_done = [[UIButton alloc] initWithFrame:CGRectMake(self.bounds.size.width-k_chart_input_bar_done_width-k_chart_input_bar_margin_left, k_chart_input_bar_margin_top, k_chart_input_bar_done_width, k_chart_input_bar_done_height)];
-        _done.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin;
+        _done.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleLeftMargin;
         _done.titleLabel.font = [UIFont boldSystemFontOfSize:14];
         [_done setBackgroundImage:[UIImage imageNamed:@"buttonbg.png"] forState:UIControlStateNormal];
         [_done setTitle:@"Send" forState:UIControlStateNormal];
@@ -75,10 +77,19 @@
         _txtv.backgroundColor = [UIColor clearColor];
         _txtv.delegate = self;
         _txtv.autoresizingMask = _txtbg.autoresizingMask;
-        _txtv.font = [UIFont systemFontOfSize:16];
+        _txtv.font = [UIFont systemFontOfSize:15];
         [self addSubview:_txtv];
         self.textView = _txtv;
         [_txtv release];
+        
+        UILabel *_ph = [[UILabel alloc] initWithFrame:CGRectInset(_txtv.frame, 8, 0)];
+        _ph.backgroundColor = [UIColor clearColor];
+        _ph.font = [UIFont systemFontOfSize:13];
+        _ph.textColor = [UIColor grayColor];
+        _ph.lineBreakMode = NSLineBreakByTruncatingTail;
+        [self insertSubview:_ph belowSubview:_txtv];
+        self.placeHolderLabel = _ph;
+        [_ph release];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(responseNotification:) name:UIKeyboardWillChangeFrameNotification object:nil];
         
@@ -99,6 +110,7 @@
         CGRect _kb_end_rect = [[[notification userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
         NSTimeInterval _kb_animation_duration = [[[notification userInfo] objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
         
+        self.currentKeyboardFrame = _kb_end_rect;
         self.barMaxHeight = _kb_end_rect.origin.y - [self defaultBarTopY];
         
         [self moveBarFromBottom:_kb_begin_rect.origin.y ToBottom:_kb_end_rect.origin.y AnimationDuration:_kb_animation_duration];
@@ -123,7 +135,7 @@
     _bar_height = _bar_height < k_chart_input_bar_min_height ? k_chart_input_bar_min_height : _bar_height;
     CGFloat _bar_y = self.frame.origin.y - _delta_height;
     _bar_y = _bar_y < [self defaultBarTopY] ? [self defaultBarTopY] : _bar_y;
-    _bar_y = _bar_y > [self defaultBarBottomY] ? [self defaultBarBottomY] : _bar_y;
+    _bar_y = _bar_y+_bar_height > self.currentKeyboardFrame.origin.y ? self.currentKeyboardFrame.origin.y-_bar_height : _bar_y;
     NSTimeInterval _duration = _delta_height != 0 && self.frame.size.height != self.barMaxHeight ? 0.25 : 0;
     CGRect _bar_rect = CGRectMake(self.frame.origin.x, _bar_y, self.frame.size.width, _bar_height);
     [self reheightBarTo:_bar_rect AnimationDuration:_duration];
@@ -170,6 +182,12 @@
 - (NSString *)text {
     return self.textView.text;
 }
+- (void)textViewDidBeginEditing:(UITextView *)textView {
+    [self refreshPlaceHolderState:YES];
+}
+- (void)textViewDidEndEditing:(UITextView *)textView {
+    [self refreshPlaceHolderState:NO];
+}
 - (void)textViewDidChange:(UITextView *)textView {
     if ([SChartInputBar isEmptyString:self.text]) {
         return;
@@ -186,6 +204,13 @@
         [self.textView flashScrollIndicators];
     }
 }
+- (void)refreshPlaceHolderState:(BOOL)isBeginEditing {
+    if (isBeginEditing) {
+        self.placeHolderLabel.hidden = YES;
+    } else {
+        self.placeHolderLabel.hidden = [SChartInputBar isEmptyString:self.text] ? NO : YES;
+    }
+}
 
 #pragma mark action
 - (void)doneAction:(id)sender {
@@ -198,6 +223,10 @@
     [self relayout];
     [self refreshButtonState];
     [self refreshTextViewState];
+    [self refreshPlaceHolderState:NO];
+}
+- (void)setPlaceHolder:(NSString *)placeHolder {
+    self.placeHolderLabel.text = placeHolder;
 }
 
 #pragma mark notify 
